@@ -235,48 +235,50 @@
 
 // modified gpt
 // File: pages/api/users.js
-import Cors from "cors";
-import connectDB from "../../src/lib/connectDB";
+import connectToDatabase from "../../src/lib/connectDB";
 import User from "../../src/models/User";
+import Cors from 'cors';
 
-// CORS Setup
+// Initialize CORS
 const cors = Cors({
-  methods: ["GET", "OPTIONS"],
-  origin: ["http://localhost:3000", "http://localhost:3002"], // your frontend URLs
-  credentials: true,
+  origin: ["http://localhost:3000", "http://localhost:3002"],
+  methods: ["GET", "POST", "PUT", "DELETE"], // Allow required methods
+  credentials: true, // Allow cookies (if needed)
 });
 
-// Middleware Helper
-const runMiddleware = (req, res, fn) =>
-  new Promise((resolve, reject) => {
+// Middleware helper
+function runMiddleware(req, res, fn) {
+  return new Promise((resolve, reject) => {
     fn(req, res, (result) => {
       if (result instanceof Error) {
-        console.error("CORS Middleware Error:", result);
         return reject(result);
       }
       return resolve(result);
     });
   });
+}
 
 export default async function handler(req, res) {
+  // Run CORS middleware
+  await runMiddleware(req, res, cors);
+
+  if (req.method !== "GET") {
+    return res.status(405).json({ message: "Method Not Allowed" });
+  }
+
   try {
-    await runMiddleware(req, res, cors);
+    const db = await connectToDatabase();
+    const users = await db.collection("users").find({}).toArray();
 
-    if (req.method === "OPTIONS") {
-      return res.status(200).end();
+    console.log("Fetched Users:", users);
+
+    if (!users || !Array.isArray(users)) {
+      return res.status(500).json({ message: "Users data is not an array" });
     }
 
-    if (req.method === "GET") {
-      await connectDB();
-      const users = await User.find({}); // Fetch all users
-      if (!users || users.length === 0) return res.status(404).json({ error: "No users found" });
-
-      return res.status(200).json(users); // Return the array of users
-    }
-
-    res.status(405).json({ error: "Method Not Allowed" });
+    return res.status(200).json(users);
   } catch (error) {
     console.error("Error fetching users:", error);
-    res.status(500).json({ error: "Internal Server Error", details: error.message });
+    return res.status(500).json({ message: "Internal Server Error", error: error.toString() });
   }
 }
