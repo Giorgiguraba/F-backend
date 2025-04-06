@@ -1,159 +1,115 @@
-// import Cors from "cors";
+import connectToDatabase from "../../src/lib/connectDB";
+import User from "../../src/models/User"
+import bcrypt from "bcryptjs"
+import Cors from "cors"
 
-// // CORS Middleware
-// const cors = Cors({
-//   origin: "*", // დროებით ყველასგან დაუშვი მოთხოვნა
-//   methods: ["POST", "GET"],
-//   credentials: true,
-// });
-
-// function runMiddleware(req, res, fn) {
-//   return new Promise((resolve, reject) => {
-//     fn(req, res, (result) => {
-//       if (result instanceof Error) {
-//         return reject(result);
-//       }
-//       return resolve(result);
-//     });
-//   });
-// }
-
-// export default async function handler(req, res) {
-//   await runMiddleware(req, res, cors); // Middleware-ის გაშვება
-
-//   if (req.method !== "POST") {
-//     return res.status(405).json({ error: "Method not allowed" });
-//   }
-
-//   res.status(200).json({ message: "CORS Test Successful" });
-// }
-
-// import connectDB from "@/lib/connectDB";
-// import User from "@/models/User";
-// import bcrypt from "bcryptjs";
-// import Cors from "cors";
-
-// // Initialize CORS middleware
-// const cors = Cors({
-//   origin: "http://localhost:3000", // Allow requests from your frontend
-//   methods: ["GET", "POST", "OPTIONS"],
-//   allowedHeaders: ["Content-Type"],
-//   credentials: true,
-// });
-
-// function runMiddleware(req, res, fn) {
-//   return new Promise((resolve, reject) => {
-//     fn(req, res, (result) => {
-//       if (result instanceof Error) {
-//         return reject(result);
-//       }
-//       return resolve(result);
-//     });
-//   });
-// }
-
-// export default async function handler(req, res) {
-//   await runMiddleware(req, res, cors);
-
-//   // ✅ Handle CORS preflight (OPTIONS request)
-//   if (req.method === "OPTIONS") {
-//     return res.status(200).end(); // Send OK response for preflight request
-//   }
-
-//   if (req.method !== "POST") {
-//     return res.status(405).json({ error: "Method Not Allowed" });
-//   }
-
-//   try {
-//     await connectDB();
-//     console.log("✅ Database connected!");
-
-//     const { name, email, password, username } = req.body;
-//     if (!username) return res.status(400).json({ error: "Username is required" });
-
-//     const existingUser = await User.findOne({ email });
-//     if (existingUser) {
-//       return res.status(400).json({ error: "User already exists" });
-//     }
-
-//     const hashedPassword = await bcrypt.hash(password, 10);
-//     const newUser = await User.create({ name, email, password: hashedPassword, username });
-
-//     return res.status(201).json({ message: "User registered successfully", user: newUser });
-//   } catch (error) {
-//     console.error("❌ Registration Error:", error);
-//     return res.status(500).json({ error: "Server error" });
-//   }
-// }
-
-
-
-
-
-
-
-import connectDB from "@/lib/connectDB";
-import User from "@/models/User";
-import bcrypt from "bcryptjs";
-import Cors from "cors";
-
-// Initialize CORS middleware
 const cors = Cors({
-  origin: "http://localhost:3000", // Allow requests from your frontend
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type"],
+  origin: ["http://localhost:3000", "http://localhost:3002"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["*"],
   credentials: true,
+  optionsSuccessStatus: 200,
 });
 
+// Helper to run middleware
 function runMiddleware(req, res, fn) {
   return new Promise((resolve, reject) => {
     fn(req, res, (result) => {
       if (result instanceof Error) {
-        return reject(result);
+        return reject(result)
       }
-      return resolve(result);
-    });
-  });
+      return resolve(result)
+    })
+  })
 }
 
 export default async function handler(req, res) {
-  await runMiddleware(req, res, cors);
+  // Run CORS middleware
+  await runMiddleware(req, res, cors)
 
-  // ✅ Handle CORS preflight (OPTIONS request)
+  // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    return res.status(200).end(); // Send OK response for preflight request
+    return res.status(200).end()
   }
 
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method Not Allowed" });
+    return res.status(405).json({ error: "Method Not Allowed" })
   }
 
   try {
-    await connectDB();
-    console.log("✅ Database connected!");
+    // Log the request body for debugging
+    console.log("Registration request body:", req.body)
 
-    const { name, email, username, password } = req.body;
+    // Validate required fields
+    const { name, email, username, password } = req.body
 
-    // Check if the username is provided
-    if (!username) {
-      return res.status(400).json({ error: "Username is required" });
+    if (!name || !email || !username || !password) {
+      return res.status(400).json({
+        error: "Missing required fields",
+        missing: Object.entries({ name, email, username, password })
+          .filter(([_, value]) => !value)
+          .map(([key]) => key),
+      })
     }
 
-    // Check if the email already exists
-    const existingUser = await User.findOne({ email });
+    // Connect to database
+    await connectToDatabase()
+    console.log("✅ Database connected!")
+
+    // Check if user already exists
+    const existingUser = await User.findOne({
+      $or: [{ email }, { username }],
+    })
+
     if (existingUser) {
-      return res.status(400).json({ error: "User already exists" });
+      const field = existingUser.email === email ? "email" : "username"
+      return res.status(400).json({ error: `User with this ${field} already exists` })
     }
 
     // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Create the new user in the database
-    const newUser = await User.create({ name, email, password: hashedPassword, username });
+    // Create new user
+    const newUser = new User({
+      name,
+      email,
+      username,
+      password: hashedPassword,
+      btc: 0,
+      usd: 0,
+    })
 
-    return res.status(201).json({ message: "User registered successfully", user: newUser });
+    // Save user to database
+    await newUser.save()
+    console.log("✅ User registered successfully:", email)
+
+    // Return success response without sensitive data
+    return res.status(201).json({
+      message: "User registered successfully",
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        username: newUser.username,
+      },
+    })
   } catch (error) {
-    console.error("❌ Registration Error:", error);
-    return res.status(500).json({ error: "Server error", details: error.message });
+    // Detailed error logging
+    console.error("❌ Registration Error:", error)
+
+    // Check for MongoDB duplicate key error
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0]
+      return res.status(400).json({
+        error: `User with this ${field} already exists`,
+      })
+    }
+
+    // Return appropriate error response
+    return res.status(500).json({
+      error: "Server error",
+      message: error.message,
+    })
   }
 }
+

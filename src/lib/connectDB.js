@@ -1,75 +1,58 @@
-// import mongoose from "mongoose";
+  // import mongoose from "mongoose";
 
-// const connectDB = async () => {
-//   if (mongoose.connections[0].readyState) {
-//     console.log("Already connected to MongoDB");
-//     return;
-//   }
-  
-//   try {
-//     await mongoose.connect(process.env.MONGO_URI, {
-//       useNewUrlParser: true,
-//       useUnifiedTopology: true,
-//     });
-//     console.log("MongoDB Connected Successfully");
-//   } catch (error) {
-//     console.error("MongoDB Connection Failed:", error);
-//     process.exit(1);
-//   }
-// };
+  // const MONGODB_URI = process.env.MONGODB_URI;
+  // if (!MONGODB_URI) {
+  //   throw new Error("Please define the MONGODB_URI environment variable");
+  // }
 
-// export default connectDB;
-// import mongoose from "mongoose";
+  // let cached = global.mongoose;
+  // if (!cached) {
+  //   cached = global.mongoose = { conn: null, promise: null };
+  // }
 
-// const MONGODB_URI = process.env.MONGODB_URI;
+  // async function connectToDatabase() {
+  //   if (cached.conn) {
+  //     return cached.conn;
+  //   }
+  //   if (!cached.promise) {
+  //     cached.promise = mongoose.connect(MONGODB_URI, {
+  //       useNewUrlParser: true,
+  //       useUnifiedTopology: true,
+  //       // Either remove bufferCommands or set it to true so that commands are buffered.
+  //       bufferCommands: true,
+  //     });
+  //   }
+  //   cached.conn = await cached.promise;
+  //   return cached.conn;
+  // }
 
-// if (!MONGODB_URI) {
-//   throw new Error("MONGODB_URI is not defined in .env.local");
-// }
+  // export default connectToDatabase;
+// lib/connectDB.js
+import mongoose from "mongoose";
 
-// const connectDB = async () => {
-//   if (mongoose.connection.readyState >= 1) return;
-//   try {
-//     await mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
-//     console.log("✅ Connected to MongoDB");
-//   } catch (error) {
-//     console.error("❌ MongoDB Connection Error:", error);
-//     process.exit(1);
-//   }
-// };
-
-// export default connectDB;
-
-
-
-
-
-// backend/pages/api/update-numbers.js
-import { MongoClient } from "mongodb";
-
-const uri = process.env.MONGODB_URI;
-
-if (!uri) {
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
   throw new Error("Please define the MONGODB_URI environment variable");
 }
 
-let client;
-let clientPromise;
-
-if (!global._mongoClientPromise) {
-  client = new MongoClient(uri, {
-    serverSelectionTimeoutMS: 50000, // Increase timeout to 50 seconds
-    socketTimeoutMS: 45000, // Increase socket timeout
-  });
-
-  global._mongoClientPromise = client.connect();
+let cached = global.mongoose;
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
 }
 
-clientPromise = global._mongoClientPromise;
-
-const connectToDatabase = async () => {
-  const db = (await clientPromise).db();
-  return db;
-};
+async function connectToDatabase() {
+  if (cached.conn) {
+    return cached.conn;
+  }
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      bufferCommands: true,
+    });
+  }
+  cached.conn = await cached.promise;
+  return cached.conn;
+}
 
 export default connectToDatabase;

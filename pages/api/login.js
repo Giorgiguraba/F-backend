@@ -1,148 +1,3 @@
-// import connectDB from "@/lib/connectDB";
-// import User from "@/models/User";
-// import bcrypt from "bcryptjs";
-// import jwt from "jsonwebtoken";
-
-// export default async function handler(req, res) {
-//   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-
-//   await connectDB();
-//   const { email, password } = req.body;
-
-//   // მომხმარებლის მოძებნა
-//   const user = await User.findOne({ email });
-//   if (!user) return res.status(400).json({ error: "User not found" });
-
-//   // პაროლის შემოწმება
-//   const isMatch = await bcrypt.compare(password, user.password);
-//   if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
-
-//   // JWT ტოკენი
-//   const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "7d" });
-
-//   res.status(200).json({ message: "Login successful", token, user });
-// }
-// import Cors from "cors";
-// import bcrypt from "bcryptjs";  // To compare hashed passwords
-// import jwt from "jsonwebtoken";  // For generating JWT tokens
-// import { users } from "../../../data/users"; // Example: Fetch users from DB or use an actual database
-
-// // CORS Middleware
-// const cors = Cors({
-//   origin: "*", // Allow all origins for now, change this for production
-//   methods: ["POST"],
-//   credentials: true,
-// });
-
-// function runMiddleware(req, res, fn) {
-//   return new Promise((resolve, reject) => {
-//     fn(req, res, (result) => {
-//       if (result instanceof Error) {
-//         return reject(result);
-//       }
-//       return resolve(result);
-//     });
-//   });
-// }
-
-// export default async function handler(req, res) {
-//   await runMiddleware(req, res, cors); // Run CORS middleware
-
-//   if (req.method !== "POST") {
-//     return res.status(405).json({ error: "Method not allowed" });
-//   }
-
-//   const { email, password } = req.body;
-
-//   // Find user in the database (or use static data for now)
-//   const user = users.find((user) => user.email === email);  // Replace with actual DB logic
-
-//   if (!user) {
-//     return res.status(404).json({ error: "User not found" });
-//   }
-
-//   // Compare the plain password with the hashed password stored in the database
-//   const isPasswordValid = await bcrypt.compare(password, user.password);
-//   if (!isPasswordValid) {
-//     return res.status(401).json({ error: "Invalid password" });
-//   }
-
-//   // Generate JWT token (customize the payload as per your need)
-//   const token = jwt.sign({ id: user.id, email: user.email }, "your_jwt_secret", {
-//     expiresIn: "1h",  // Token expiration
-//   });
-
-//   // Send token as response
-//   return res.status(200).json({ message: "Login successful", token });
-// }
-
-
-// import Cors from "cors";
-// import bcrypt from "bcryptjs";
-// import jwt from "jsonwebtoken";
-// import connectDb from "../../../../lib/connectDB"; // Import the database connection
-// import User from "../../src/models/User"; // Assuming you have a User model
-
-// // Initialize CORS middleware
-// const cors = Cors({
-//   origin: "http://localhost:3000", // Frontend origin
-//   methods: ["POST", "OPTIONS"], // Allow POST and OPTIONS methods
-//   allowedHeaders: ["Content-Type"], // Ensure that the 'Content-Type' header is allowed
-//   credentials: true, // Allow credentials if needed
-// });
-
-// function runMiddleware(req, res, fn) {
-//   return new Promise((resolve, reject) => {
-//     fn(req, res, (result) => {
-//       if (result instanceof Error) {
-//         return reject(result);
-//       }
-//       return resolve(result);
-//     });
-//   });
-// }
-
-// export default async function handler(req, res) {
-//   await runMiddleware(req, res, cors); // Run CORS middleware
-
-//   // Handle OPTIONS request (CORS preflight)
-//   if (req.method === "OPTIONS") {
-//     return res.status(200).end(); // Respond with 200 OK for OPTIONS
-//   }
-
-//   // Handle POST request for login
-//   if (req.method !== "POST") {
-//     return res.status(405).json({ error: "Method not allowed" });
-//   }
-
-//   const { email, password } = req.body;
-
-//   // Connect to the database
-//   await connectDb();  // Ensure you connect before performing DB operations
-
-//   // Find user in the database
-//   const user = await User.findOne({ email });
-
-//   if (!user) {
-//     return res.status(404).json({ error: "User not found" });
-//   }
-
-//   // Compare the plain password with the hashed password stored in the database
-//   const isPasswordValid = await bcrypt.compare(password, user.password);
-//   if (!isPasswordValid) {
-//     return res.status(401).json({ error: "Invalid password" });
-//   }
-
-//   // Generate JWT token
-//   const token = jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, {
-//     expiresIn: "1h",
-//   });
-
-//   // Send token as response
-//   return res.status(200).json({ message: "Login successful", token });
-// }
-// backend/pages/api/login.js
-
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import connectDB from "@/lib/connectDB";
@@ -197,3 +52,84 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Authentication failed" });
   }
 }
+// import bcrypt from "bcryptjs"
+// import jwt from "jsonwebtoken"
+// import connectDB from "../../src/lib/connectDB"
+// import User from "../../src/models/User"
+// import { cors, runMiddleware } from "../../src/middlewares/cors"
+
+// export default async function handler(req, res) {
+//   // Run CORS middleware
+//   await runMiddleware(req, res, cors)
+
+//   // Handle CORS preflight
+//   if (req.method === "OPTIONS") {
+//     return res.status(200).end()
+//   }
+
+//   if (req.method !== "POST") {
+//     return res.status(405).json({ error: "Method Not Allowed" })
+//   }
+
+//   try {
+//     const { email, password } = req.body
+
+//     // Validate required fields
+//     if (!email || !password) {
+//       return res.status(400).json({
+//         error: "Email and password are required",
+//       })
+//     }
+
+//     console.log("Login attempt for:", email)
+
+//     // Connect to database
+//     await connectDB()
+//     console.log("✅ Database connected!")
+
+//     // Find user by email
+//     const user = await User.findOne({ email })
+//     if (!user) {
+//       console.log("❌ User not found:", email)
+//       return res.status(401).json({ error: "Invalid credentials" })
+//     }
+
+//     // Compare passwords
+//     const isMatch = await bcrypt.compare(password, user.password)
+//     if (!isMatch) {
+//       console.log("❌ Invalid password for:", email)
+//       return res.status(401).json({ error: "Invalid credentials" })
+//     }
+
+//     // Generate JWT token
+//     const token = jwt.sign(
+//       {
+//         userId: user._id,
+//         email: user.email,
+//         username: user.username,
+//       },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "24h" },
+//     )
+
+//     console.log("✅ Login successful:", email)
+
+//     // Return success with token and user info
+//     return res.status(200).json({
+//       message: "Login successful",
+//       token,
+//       user: {
+//         id: user._id,
+//         name: user.name,
+//         email: user.email,
+//         username: user.username,
+//       },
+//     })
+//   } catch (error) {
+//     console.error("❌ Authentication error:", error)
+//     return res.status(500).json({
+//       error: "Authentication failed",
+//       message: error.message,
+//     })
+//   }
+// }
