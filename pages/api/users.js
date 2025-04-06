@@ -4,7 +4,7 @@ import Cors from 'cors';
 
 // Initialize CORS
 const cors = Cors({
-  origin: ["http://localhost:3000", "http://localhost:3002"],
+  origin: ["https://f-frontend-rho.vercel.app", "http://localhost:3002"],
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 });

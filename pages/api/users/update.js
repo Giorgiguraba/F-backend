@@ -5,7 +5,7 @@ import User from "../../../src/models/User"
 // CORS Setup
 const cors = Cors({
   methods: ["PUT", "OPTIONS"],
-  origin: ["http://localhost:3000", "http://localhost:3002"],
+  origin: ["https://f-frontend-rho.vercel.app", "http://localhost:3002"],
   credentials: true,
 })
 
