@@ -62,7 +62,29 @@
 // };
 
 // module.exports = { verifyToken };
-import jwt from "jsonwebtoken"
+// import jwt from "jsonwebtoken"
+
+// const verifyToken = (req, res, next) => {
+//   const token = req.headers.authorization?.split(" ")[1] // Get token from Authorization header
+
+//   if (!token) {
+//     return res.status(401).json({ error: "Unauthorized: No token provided" })
+//   }
+
+//   try {
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET) // Verify token
+//     req.user = decoded // Attach user data to request object
+//     next()
+//   } catch (
+//     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+//     error
+//   ) {
+//     return res.status(401).json({ error: "Unauthorized: Invalid token" })
+//   }
+// }
+
+// export { verifyToken }
+const jwt = require("jsonwebtoken")
 
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1] // Get token from Authorization header
@@ -75,13 +97,10 @@ const verifyToken = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET) // Verify token
     req.user = decoded // Attach user data to request object
     next()
-  } catch (
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    error
-  ) {
+  } catch (err) {
     return res.status(401).json({ error: "Unauthorized: Invalid token" })
   }
 }
 
-export { verifyToken }
+module.exports = { verifyToken }
 
