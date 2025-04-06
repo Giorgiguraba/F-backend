@@ -1,19 +1,3 @@
-// user.js
-// src/models/User.js
-// import mongoose from 'mongoose';
-
-// const userSchema = new mongoose.Schema({
-//   email: { type: String, required: true },
-//   name: { type: String }, // optional if needed
-//   numbers: {
-//     btc: { type: Number, default: 0 },
-//     usd: { type: Number, default: 0 },
-//   },
-// });
-
-// const User = mongoose.models.User || mongoose.model('User', userSchema);
-// export default User;
-// src/models/User.js
 import mongoose from 'mongoose';
 
 const numbersSchema = new mongoose.Schema({
